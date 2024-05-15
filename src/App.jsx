@@ -1,107 +1,122 @@
 import "./App.css";
-import search_icon from "./assets/search.png";
-import clear_icon from "./assets/clear.png";
-import cloud_icon from "./assets/cloud.png";
-import drizzle_icon from "./assets/drizzle.png";
-import humidity_icon from "./assets/humidity.png";
-import rain_icon from "./assets/rain.png";
-import snow_icon from "./assets/snow.png";
-import wind_icon from "./assets/wind.png";
-import { useState } from "react";
+
+import searchIcon from "./assets/search.png";
+import clearIcon from "./assets/clear.png";
+import cloudIcon from "./assets/cloud.png";
+import drizzleIcon from "./assets/drizzle.png";
+import humidityIcon from "./assets/humidity.png";
+import rainIcon from "./assets/rain.png";
+import snowIcon from "./assets/snow.png";
+import windIcon from "./assets/wind.png";
+
+import { useEffect, useState } from "react";
+
+async function getWeatherInfo(url) {
+    const response = await fetch(url);
+    return await response.json();
+}
+
+function getWeatherIcon(data) {
+    switch (data.weather[0].icon) {
+        case "01d" || "01n":
+            return clearIcon;
+
+        case "02d" || "02n":
+            return cloudIcon;
+
+        case "03d" || "03n":
+            return drizzleIcon;
+
+        case "04d" || "04n":
+            return drizzleIcon;
+
+        case "09d" || "09n":
+            return rainIcon;
+
+        case "10d" || "10n":
+            return rainIcon;
+
+        case "13d" || "13n":
+            return snowIcon;
+
+        default:
+            return clearIcon;
+    }
+}
 
 export default function App() {
-    let api_key = "5f89553a7ae5015a4dd76cafec04a79c";
-    const [wicon, setWicon] = useState(cloud_icon);
-    const search = async () => {
-        const element = document.getElementsByClassName("cityInput");
-        if (element[0].value === "") {
-            return 0;
+    const [weatherIcon, setWeatherIcon] = useState(cloudIcon);
+    const [weatherInfo, setWeatherInfo] = useState({
+        humidity: 0,
+        windRate: 0,
+        temperature: 0,
+        location: "",
+    });
+
+    const [location, setLocation] = useState("");
+    function handleInputChange(event) {
+        if (event) setLocation(event.target.value);
+    }
+
+    async function onSubmit(event) {
+        event.preventDefault();
+
+        try {
+            let url = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=Metric&appid=${
+                import.meta.env.VITE_API_KEY
+            }`;
+            const data = await getWeatherInfo(url);
+            if (data) {
+                setWeatherInfo({
+                    humidity: data.main.humidity,
+                    location: data.name,
+                    temperature: data.main.temp,
+                    windRate: data.main.speed,
+                });
+                setWeatherIcon(getWeatherIcon(data));
+            }
+        } catch (error) {
+            console.log(error);
         }
-        let url = `https://api.openweathermap.org/data/2.5/weather?q=${element[0].value}&units=Metric&appid=${api_key}`;
+    }
 
-        let response = await fetch(url);
-        let data = await response.json();
-        const humidity = document.getElementsByClassName("humidity-percent");
-        const wind = document.getElementsByClassName("wind-rate");
-        const temprature = document.getElementsByClassName("weather-temp");
-        const location = document.getElementsByClassName("weather-location");
-
-        humidity[0].innerHTML = data.main.humidity + "%";
-        wind[0].innerHTML = data.wind.speed + "km/h";
-        temprature[0].innerHTML = data.main.temp + "°c";
-        location[0].innerHTML = data.name;
-
-        if (data.weather[0].icon === "01d" || data.weather[0].icon === "01n") {
-            setWicon(clear_icon);
-        } else if (
-            data.weather[0].icon === "02d" ||
-            data.weather[0].icon === "02n"
-        ) {
-            setWicon(cloud_icon);
-        } else if (
-            data.weather[0].icon === "03d" ||
-            data.weather[0].icon === "03n"
-        ) {
-            setWicon(drizzle_icon);
-        } else if (
-            data.weather[0].icon === "04d" ||
-            data.weather[0].icon === "04n"
-        ) {
-            setWicon(drizzle_icon);
-        } else if (
-            data.weather[0].icon === "09d" ||
-            data.weather[0].icon === "09n"
-        ) {
-            setWicon(rain_icon);
-        } else if (
-            data.weather[0].icon === "10d" ||
-            data.weather[0].icon === "10n"
-        ) {
-            setWicon(rain_icon);
-        } else if (
-            data.weather[0].icon === "13d" ||
-            data.weather[0].icon === "13n"
-        ) {
-            setWicon(snow_icon);
-        } else {
-            setWicon(clear_icon);
-        }
-    };
     return (
         <>
             <div className="container">
-                <div className="top-bar">
+                <form onSubmit={onSubmit} className="top-bar">
                     <input
                         type="text"
                         className="cityInput"
                         placeholder="search"
+                        onChange={handleInputChange}
                     />
-                    <div
-                        className="search-icon"
-                        onClick={() => {
-                            search();
-                        }}
-                    >
-                        <img src={search_icon} alt="" />
-                    </div>
-                </div>
+                    <button type="submit" className="search-icon">
+                        <img src={searchIcon} alt="" />
+                    </button>
+                </form>
                 <div className="weather-image">
-                    <img src={wicon} alt="" />
+                    <img src={weatherIcon} alt="" />
                 </div>
-                <div className="weather-temp">24&deg;c</div>
-                <div className="weather-location">London</div>
+                <div className="weather-temp">
+                    {weatherInfo.temperature}&deg;c
+                </div>
+                <div className="weather-location">{weatherInfo.location}</div>
                 <div className="data-container">
                     <div className="element">
-                        <img src={humidity_icon} alt="" className="icon" />
+                        <img src={humidityIcon} alt="" className="icon" />
                         <div className="data">
-                            <div className="humidity-percent">64%</div>
+                            <div className="humidity-percent">
+                                {weatherInfo.humidity}%
+                            </div>
                             <div className="text">Humidity</div>
                         </div>
                     </div>
                     <div className="element">
-                        <img src={wind_icon} alt="" className="icon" />
+                        <img src={windIcon} alt="" className="icon" />
                         <div className="data">
-                            <div className="wind-rate">18 km/h </div>
+                            <div className="wind-rate">
+                                {weatherInfo.windRate} km/h{" "}
+                            </div>
                             <div className="text">Wind Speed</div>
                         </div>
                     </div>
